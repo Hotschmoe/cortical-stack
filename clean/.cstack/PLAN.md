@@ -3,21 +3,21 @@
 > **Updated:** --
 
 ## Legend
-`- [ ]` Pending | `- [>]` In Progress | `- [x]` Completed | `- [!]` Blocked
+`- [ ]` Pending | `- [>]` In Progress | `- [x]` Completed | `- [!]` Blocked | `- [~]` Closed
 Priority: P0=Critical P1=High P2=Medium P3=Low
 
 ---
 
 ## Tasks
 
-<!-- One line per task: - [status] P#: Title | context | next: action -->
+<!-- V1.5 format: - [status] P#: Title #label1 #label2 | modified: YYYY-MM-DD -->
 
 _No tasks. Add with `/cstack-task add`_
 
 <!-- Example:
-- [>] P1: User auth | JWT approach | next: session management
-- [ ] P2: Rate limiting | token bucket | next: implement middleware
-- [!] P1: Payments | Stripe | blocked: API keys from client
+- [>] P1: User auth #feature #auth | modified: 2026-01-15
+- [ ] P2: Rate limiting #security #api | modified: 2026-01-14
+- [!] P1: Payments #feature | blocked: API keys from client | modified: 2026-01-10
 -->
 
 ---
@@ -36,18 +36,34 @@ Decision: No OAuth for MVP, add later.
 
 ---
 
+## Completed
+
+<!-- Tasks completed successfully: - [x] P#: Title #labels | closed: YYYY-MM-DD | reason: Why -->
+
+_None._
+
+---
+
+## Closed
+
+<!-- Tasks closed without completing: - [~] P#: Title #labels | closed: YYYY-MM-DD | reason: Why -->
+
+_None._
+
+---
+
 ## Backlog
 
 <!-- Discovered bugs, tech debt, ideas. Promote to Tasks when ready. -->
 
 ### Bugs
-<!-- - [!] P#: Description | file:line | details -->
+<!-- - [!] P#: Description #bug | file:line | details -->
 _None._
 
 ### Debt
-<!-- - [ ] P#: Description | why | impact -->
+<!-- - [ ] P#: Description #debt | why | impact -->
 _None._
 
 ### Ideas
-<!-- - [ ] Description | value -->
+<!-- - [ ] Description #feature | value -->
 _None._

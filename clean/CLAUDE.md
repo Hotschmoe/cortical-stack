@@ -1,4 +1,4 @@
-<!-- cstack:begin version="1.0.0" -->
+<!-- cstack:begin version="1.5.0" -->
 # Cortical Stack Instructions
 
 This project uses cortical stack for agent memory persistence.
@@ -8,10 +8,15 @@ This project uses cortical stack for agent memory persistence.
 | Command | What it does |
 |---------|--------------|
 | `/cstack-task` | List tasks with numbers |
+| `/cstack-task #label` | Filter tasks by label |
 | `/cstack-task start 1` | Start task #1 (quick) |
 | `/cstack-task start 1 --plan` | Start task #1 with interview |
-| `/cstack-task add P1: X` | Add new task |
+| `/cstack-task add P1: X #label` | Add new task with labels |
 | `/cstack-task done` | Complete active task |
+| `/cstack-task done "reason"` | Complete with close reason |
+| `/cstack-task close N "reason"` | Close task without completing |
+| `/cstack-search QUERY` | Search across stack files |
+| `/cstack-stale [days]` | Find stale tasks (default: 7 days) |
 | `/cstack-checkpoint` | Save all state |
 | `/cstack-start` | Read context and show status |
 
@@ -25,10 +30,10 @@ This project uses cortical stack for agent memory persistence.
 | `.cstack/OUTBOX.md` | Messages FROM this agent |
 | `.cstack/QUICKREF.md` | Command quick reference |
 
-## Task Format (PLAN.md)
+## Task Format (V1.5)
 
 ```
-- [status] P#: Title | context | next: action
+- [status] P#: Title #label1 #label2 | modified: YYYY-MM-DD
 ```
 
 | Syntax | Status |
@@ -37,8 +42,20 @@ This project uses cortical stack for agent memory persistence.
 | `- [>]` | In Progress |
 | `- [x]` | Completed |
 | `- [!]` | Blocked |
+| `- [~]` | Closed (won't fix) |
 
 **Priority:** P0=Critical P1=High P2=Medium P3=Low
+
+## Labels
+
+| Label | Meaning |
+|-------|---------|
+| `#bug` | Bug fix |
+| `#debt` | Technical debt |
+| `#feature` | New feature |
+| `#urgent` | Needs immediate attention |
+
+Custom: Any `#word` is valid.
 
 ## Workflow
 
@@ -49,9 +66,18 @@ This project uses cortical stack for agent memory persistence.
     |
 [work on task]                # Check off subtasks in CURRENT.md
     |
-/cstack-task done             # Complete, clear active task
+/cstack-task done "reason"    # Complete with reason
     |
 /cstack-checkpoint            # Save state
+```
+
+## Search and Review
+
+```
+/cstack-search JWT            # Find mentions
+/cstack-search #auth          # Find by label
+/cstack-stale                 # Find stale tasks (7 days)
+/cstack-stale 14              # Tasks older than 14 days
 ```
 
 ## Message Format (INBOX/OUTBOX)
