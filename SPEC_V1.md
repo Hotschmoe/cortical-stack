@@ -11,13 +11,13 @@ V1 is inspired by [context-by-md](https://github.com/Hotschmoe/context-by-md) - 
 ### One-Line Install (PowerShell)
 
 ```powershell
-irm https://raw.githubusercontent.com/hotschmoe/cortical-stack/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/hotschmoe/cortical-stack/master/install.ps1 | iex
 ```
 
 ### One-Line Install (Bash)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hotschmoe/cortical-stack/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/hotschmoe/cortical-stack/master/install.sh | bash
 ```
 
 ### Manual Install

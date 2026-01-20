@@ -1,256 +1,225 @@
 # Cortical Stack - V2 Specification
 
-CLI tooling for multi-agent coordination.
+Single-agent productivity enhancements.
 
 ## Philosophy
 
-V2 adds the `cstack` CLI for scenarios where pure markdown isn't enough:
-- Multi-agent message routing
-- Hash-based message IDs for deduplication
-- Atomic file operations
-- Orchestration tooling
+V2 adds lightweight tooling to improve single-agent workflows:
+- Find things fast (search)
+- Categorize work (labels)
+- Surface forgotten tasks (stale detection)
+- Track why things were closed (close reasons)
 
-The CLI is written in Go and distributed as pre-built binaries.
+No binaries required. V2 features are implemented as slash commands and markdown conventions that Claude Code (or any AI agent) can use directly.
 
-## Installation
+## New Features
 
-### Pre-built Binaries
+### Search
 
-```bash
-# macOS/Linux
-curl -fsSL https://github.com/hotschmoe/cortical-stack/releases/latest/download/cstack-$(uname -s)-$(uname -m) -o /usr/local/bin/cstack
-chmod +x /usr/local/bin/cstack
-
-# Windows (PowerShell)
-irm https://github.com/hotschmoe/cortical-stack/releases/latest/download/cstack-windows-amd64.exe -OutFile cstack.exe
-```
-
-### From Source
-
-```bash
-go install github.com/hotschmoe/cortical-stack/cmd/cstack@latest
-```
-
-## CLI Commands
-
-### Initialize Stack
-
-```bash
-cstack init [path]
-```
-
-Creates `.cstack/` directory with template files.
-
-### Send Message
-
-```bash
-cstack send --to agent-backend --type task "Implement the login endpoint"
-```
-
-Atomically appends to target agent's INBOX.md with:
-- Generated hash-based ID
-- Timestamp
-- Proper formatting
-
-### Receive Messages
-
-```bash
-cstack recv [--clear]
-```
-
-Reads INBOX.md, optionally clears after reading.
-
-### Check Status
-
-```bash
-cstack status
-```
-
-Shows:
-- Current task from CURRENT.md
-- In-progress tasks from PLAN.md
-- Unread inbox message count
-
-### Watch for Messages
-
-```bash
-cstack watch --inbox
-```
-
-Polls INBOX.md for new messages. Useful for orchestrators.
-
-## Hash-Based Message IDs
-
-V2 generates collision-resistant IDs from content hash:
+Find content across all stack files using ripgrep/grep:
 
 ```
-ID = base62(sha256(From + Type + Content + truncated_timestamp)[:6])
+/cstack-search JWT
+/cstack-search "blocked by" --file PLAN.md
+/cstack-search #auth
 ```
 
-Example: `msg-a7f3bc`
+Implementation: Slash command that wraps `rg` or `grep` and formats results.
 
-Benefits:
-- Deduplication (same message = same ID)
-- No central ID coordinator needed
-- Merge-friendly in git
+```markdown
+# Search Results for "JWT"
+
+## .cstack/CURRENT.md:15
+...implementing **JWT** middleware for auth...
+
+## .cstack/PLAN.md:8
+- [>] P1: JWT refresh token rotation | #auth #security
+```
+
+### Labels
+
+Inline hashtag syntax for categorization:
+
+```markdown
+## Tasks
+
+- [ ] P1: Fix login redirect #bug #auth #urgent
+- [>] P2: Add rate limiting #security #api
+- [ ] P3: Refactor user model #debt #backend
+```
+
+**Reserved labels:**
+| Label | Meaning |
+|-------|---------|
+| `#bug` | Bug fix |
+| `#debt` | Technical debt |
+| `#feature` | New feature |
+| `#urgent` | Needs immediate attention |
+
+**Custom labels:** Any `#word` is valid. Use what makes sense for your project.
+
+**Filter by label:**
+```
+/cstack-task #bug           # List all bugs
+/cstack-task #auth #urgent  # List auth + urgent
+```
+
+### Stale Detection
+
+Surface tasks that haven't been touched in a while:
+
+```
+/cstack-stale              # Default: 7 days
+/cstack-stale 14           # Tasks older than 14 days
+```
+
+Output:
+```markdown
+# Stale Tasks (no activity > 7 days)
+
+1. [P3] Write API docs | #docs | last: 2026-01-10
+2. [P2] Fix mobile layout | #bug #frontend | last: 2026-01-08
+3. [BLOCKED] Stripe integration | #payment | last: 2026-01-05
+
+3 stale tasks found. Review or close?
+```
+
+**Implementation:** Tasks track last-modified date in metadata:
+
+```markdown
+- [ ] P2: Fix mobile layout #bug | modified: 2026-01-08
+```
+
+Or inferred from git history if not present.
+
+### Close Reasons
+
+When completing or abandoning tasks, record why:
+
+```
+/cstack-task done "Shipped in v1.2.0"
+/cstack-task close 3 "Won't fix - out of scope"
+/cstack-task close 5 "Duplicate of #2"
+```
+
+Closed tasks move to a `## Completed` or `## Closed` section with reason:
+
+```markdown
+## Completed
+
+- [x] P1: JWT auth | #auth | closed: 2026-01-15 | reason: Shipped in v1.2.0
+- [x] P2: Rate limiting | #security | closed: 2026-01-14 | reason: Done
+
+## Closed (Won't Fix)
+
+- [~] P3: Add GraphQL | #api | closed: 2026-01-13 | reason: Staying with REST
+```
+
+**New status marker:** `[~]` for closed-won't-fix (distinct from `[x]` completed).
+
+## Updated Commands
+
+| Command | What it does |
+|---------|--------------|
+| `/cstack-search QUERY` | Search across stack files |
+| `/cstack-task #label` | Filter tasks by label |
+| `/cstack-stale [days]` | Show tasks with no recent activity |
+| `/cstack-task done "reason"` | Complete task with reason |
+| `/cstack-task close N "reason"` | Close task without completing |
 
 ## File Format Extensions
 
-### INBOX.md / OUTBOX.md
-
-V2 adds `ID` field (V1 format still supported):
+### PLAN.md with Labels and Metadata
 
 ```markdown
----
-ID: msg-a7f3bc
-From: manager
-To: agent-backend
-Type: task
-Time: 2026-01-19T10:30:00Z
----
-Implement the login endpoint.
+# Plan
+
+> **Updated:** 2026-01-15
+
+## Legend
+`- [ ]` Pending | `- [>]` In Progress | `- [x]` Completed | `- [!]` Blocked | `- [~]` Closed
+
+## Tasks
+
+- [>] P1: User dashboard #feature #frontend | modified: 2026-01-15
+- [ ] P2: Fix login bug #bug #auth | modified: 2026-01-14
+- [!] P1: Payment integration #feature #payment | blocked: waiting on Stripe keys | modified: 2026-01-10
+
+## Completed
+
+- [x] P1: JWT authentication #auth #security | closed: 2026-01-12 | reason: Shipped
+- [x] P2: Database migrations #backend | closed: 2026-01-10 | reason: Done
+
+## Closed
+
+- [~] P3: GraphQL API #api | closed: 2026-01-08 | reason: Out of scope for MVP
 ```
 
-### Thread Support
+### QUICKREF.md Updates
 
-Optional thread grouping:
+Add V2 commands to quick reference.
 
-```markdown
----
-ID: msg-b8c4de
-From: agent-frontend
-Thread: auth-implementation
-ReplyTo: msg-a7f3bc
-Type: question
-Time: 2026-01-19T11:00:00Z
----
-Should login return user profile data?
-```
+## INBOX/OUTBOX - Moving to NEEDLECAST
 
-## Go Library
+INBOX and OUTBOX will be migrated to a separate project: **NEEDLECAST**.
 
-The V1 Go code becomes the foundation for the CLI:
+**Rationale:** Cross-repo agent communication is a distinct concern from single-agent memory persistence. Separating them allows:
+- Cortical Stack to focus purely on memory (CURRENT.md, PLAN.md)
+- NEEDLECAST to handle agent-to-agent messaging with proper tooling
+- Cleaner single-agent installs without unused messaging files
 
-```go
-import "github.com/hotschmoe/cortical-stack/pkg/cstack"
+**NEEDLECAST** (named after the Altered Carbon technology for transmitting consciousness between stacks) will handle:
+- Cross-repository agent communication
+- Message routing and delivery
+- Async coordination between separate Claude Code sessions
 
-// V2 additions
-msg := cstack.Message{
-    From:    "manager",
-    To:      "agent-backend",
-    Type:    "task",
-    Content: "Implement login",
-}
+**Migration path:**
+1. V2 installs will no longer include INBOX.md/OUTBOX.md by default
+2. Projects needing cross-repo communication install NEEDLECAST separately
+3. Existing INBOX/OUTBOX files continue to work (no breaking changes)
 
-// Generates hash-based ID automatically
-id, err := cstack.SendMessage("/path/to/agent", msg)
-
-// Atomic write with file locking
-err = cstack.WriteInboxAtomic("/path/to/agent", msg)
-```
-
-## Multi-Agent Orchestration
-
-```
-                    Orchestrator
-                         |
-          +--------------+--------------+
-          |              |              |
-     agent-api     agent-frontend   agent-db
-          |              |              |
-      .cstack/       .cstack/       .cstack/
-```
-
-Orchestrator workflow:
-1. Read each agent's OUTBOX.md
-2. Route messages to appropriate INBOX.md
-3. Clear processed OUTBOX.md entries
-4. Monitor for blocked agents
-
-## AGENTS.md Support
-
-V2 introduces `AGENTS.md` for defining multi-agent systems:
-
-```markdown
-# Agents
-
-## agent-backend
-- Role: API and backend development
-- Stack: ./backend/.cstack/
-- Skills: /deploy, /test, /migrate
-
-## agent-frontend
-- Role: UI and client development
-- Stack: ./frontend/.cstack/
-- Skills: /build, /lint, /preview
-
-## agent-devops
-- Role: Infrastructure and deployment
-- Stack: ./infra/.cstack/
-- Skills: /provision, /monitor
-```
-
-### Agent Definition Fields
-
-| Field | Required | Description |
-|-------|----------|-------------|
-| Role | Yes | What this agent is responsible for |
-| Stack | Yes | Path to agent's `.cstack/` directory |
-| Skills | No | Slash commands this agent can execute |
-| Hooks | No | Custom hooks for this agent |
-
-### CLI Commands for Agents
-
-```bash
-cstack agents list              # List all defined agents
-cstack agents status            # Show status of all agents
-cstack agents send backend task "Deploy v1.2"  # Send to specific agent
-```
-
-### Agent-Specific Hooks
-
-Each agent can have custom hooks in their stack:
-
-```
-./backend/.cstack/
-  .claude/
-    hooks/
-      deploy.ps1      # Triggered by /deploy skill
-      deploy.sh
-```
+**Not in scope for NEEDLECAST:** Multi-agent orchestration in the same repo. That's a different problem.
 
 ## V2 Scope
 
 ### Included
-- `cstack` CLI binary
-- Hash-based message IDs
-- Atomic file operations
-- Thread support
-- AGENTS.md multi-agent definitions
-- Agent-specific skills and hooks
-- Go library with full API
-- Pre-built binaries for major platforms
+- Search command (ripgrep/grep wrapper)
+- Label syntax and filtering
+- Stale task detection
+- Close reasons with new `[~]` marker
+- Updated PLAN.md format
+
+### Removed (moved to NEEDLECAST)
+- INBOX.md
+- OUTBOX.md
 
 ### Excluded (V3+)
+- CLI binary
 - Task dependency graph
 - Semantic compaction
 - Memory decay
-- Search indexing
+- AGENTS.md for alternative AI agents (Gemini, Codex, etc.)
 
 ## Migration from V1
 
-V2 is fully backward compatible with V1:
-- V1 files work without changes
-- Missing IDs auto-generated on read
-- CLI commands work on V1 stacks
+V2 is fully backward compatible:
+- V1 PLAN.md files work without changes
+- Labels are optional (add when useful)
+- Stale detection works on any task format
+- Close reasons are optional
 
-## Release Strategy
+## Implementation Notes
 
-- Binaries built via GitHub Actions on tag
-- Platforms: linux-amd64, linux-arm64, darwin-amd64, darwin-arm64, windows-amd64
-- Checksums published with each release
+V2 features are slash commands, not a binary. They rely on:
+- Claude Code's ability to read/write markdown
+- Shell tools (rg, grep) for search
+- Git for modification dates (fallback)
+
+No installation beyond V1. Just use the new commands.
+
+---
 
 ## Related Projects
 
 - [context-by-md](https://github.com/Hotschmoe/context-by-md) - V1 inspiration
-- [beads](https://github.com/steveyegge/beads) - V3 inspiration for advanced features
+- [beads_rust](https://github.com/Dicklesworthstone/beads_rust) - Search and label inspiration

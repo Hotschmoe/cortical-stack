@@ -1,14 +1,14 @@
 # Cortical Stack - V3 Specification
 
-Beads-style features for complex, long-running agent workflows.
+Advanced features for complex, long-running agent workflows.
 
 ## Philosophy
 
 V3 draws inspiration from [beads](https://github.com/steveyegge/beads) to handle:
 - Complex task dependency graphs
 - Long-running workflows that exceed context windows
-- Multi-agent coordination at scale
 - Semantic memory management
+- Alternative AI agent support (Gemini, Codex, etc.)
 
 While beads uses JSONL storage, we maintain markdown as the primary format with optional indexing for performance.
 
@@ -137,6 +137,45 @@ Useful for:
 - Draft tasks before sharing
 - Sensitive context
 
+### AGENTS.md - Alternative AI Agent Support
+
+Projects may use different AI coding assistants. AGENTS.md defines agent-specific configuration:
+
+```markdown
+# Agent Configuration
+
+## Default Agent
+gemini
+
+## Agents
+
+### claude
+- Tool: Claude Code
+- Instructions: .cstack/CLAUDE.md
+- Hooks: .claude/hooks/
+
+### gemini
+- Tool: Gemini CLI
+- Instructions: .cstack/GEMINI.md
+- Context: Uses @.cstack for file references
+
+### codex
+- Tool: OpenAI Codex CLI
+- Instructions: .cstack/CODEX.md
+- Format: Prefers structured prompts
+```
+
+**Purpose:** Allow the same `.cstack/` to work across different AI agents.
+
+**Not for:** Multi-agent orchestration in the same repo. This is single-agent configuration for teams/projects that use different AI tools.
+
+Each agent may need slightly different instruction files:
+- `CLAUDE.md` - Claude Code specific instructions
+- `GEMINI.md` - Gemini CLI specific instructions
+- `CODEX.md` - Codex specific instructions
+
+The core stack files (CURRENT.md, PLAN.md) remain the same - only the instruction layer differs.
+
 ## File Format Extensions
 
 ### PLAN.md with Dependencies
@@ -242,9 +281,10 @@ cstack stealth on|off|status
 - HISTORY.md for archived work
 - Stealth mode for local-only tracking
 - Critical path analysis
+- AGENTS.md for alternative AI agent support (Gemini, Codex, etc.)
 
 ### Excluded (Future)
-- Real-time sync between agents
+- Real-time multi-agent orchestration
 - Distributed consensus
 - Cloud-hosted stack service
 
