@@ -1,8 +1,30 @@
 # Cortical Stack - V1 Specification
 
-## Overview
+Pure markdown. Zero dependencies. Claude-native.
 
-V1 is pure markdown files in `.cstack/` - simple, portable, human-readable, no external dependencies.
+## Philosophy
+
+V1 is inspired by [context-by-md](https://github.com/Hotschmoe/context-by-md) - the insight that AI agents can read and write markdown directly without needing parsing libraries. The "library" is the file format itself plus Claude Code instructions.
+
+## Installation
+
+### One-Line Install (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/hotschmoe/cortical-stack/main/install.ps1 | iex
+```
+
+### One-Line Install (Bash)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hotschmoe/cortical-stack/main/install.sh | bash
+```
+
+### Manual Install
+
+1. Copy `clean/.cstack/` to your project root
+2. Add `.cstack/` instructions to your CLAUDE.md (or use the provided template)
+3. Optionally configure hooks in `.claude/settings.local.json`
 
 ## File Structure
 
@@ -13,132 +35,166 @@ repo/
     PLAN.md       # Task backlog with states
     INBOX.md      # Messages TO this agent
     OUTBOX.md     # Messages FROM this agent
-    CONTEXT.md    # Long-term context/memory (optional)
 ```
 
 ## File Formats
 
 ### CURRENT.md
 
+Tracks the agent's active state. Updated frequently during work.
+
 ```markdown
 # Current State
 
 ## Current Task
-<description of active task>
+Implement user authentication
 
 ## Focus
-<what the agent is currently focused on>
+Building JWT middleware
 
 ## Next Steps
-- Step 1
-- Step 2
-- Step 3
+- Write unit tests
+- Add integration tests
+- Update API documentation
 ```
 
 ### PLAN.md
 
-Task states use checkbox notation:
+Task backlog using checkbox notation:
 
-| Syntax | Status |
-|--------|--------|
-| `- [ ]` | Pending |
-| `- [>]` | In Progress |
-| `- [x]` | Completed |
-| `- [!]` | Blocked |
+| Syntax | Status | Description |
+|--------|--------|-------------|
+| `- [ ]` | Pending | Not started |
+| `- [>]` | In Progress | Currently working |
+| `- [x]` | Completed | Done |
+| `- [!]` | Blocked | Waiting on something |
 
 ```markdown
 # Plan
 
 ## Tasks
-- [ ] Pending task
-- [>] In progress task
-- [x] Completed task
-- [!] Blocked task
+- [x] Set up project structure
+- [>] Implement authentication
+- [ ] Add user dashboard
+- [!] Deploy to staging (waiting on infra)
 
 ## Notes
-Additional context and notes
+Using JWT for auth, refresh tokens stored in httpOnly cookies.
 ```
 
-### INBOX.md / OUTBOX.md
+### INBOX.md
 
-Messages use YAML frontmatter:
+Messages TO this agent. Written by orchestrator or other agents.
 
 ```markdown
+# Inbox
+
 ---
-ID: msg-a7f3
-From: agent-id
-To: agent-id (or "manager")
-Thread: optional-thread-id
-Type: task|question|milestone|blocked|done
+From: manager
+Type: task
 Time: 2026-01-19T10:30:00Z
 ---
-Message content here.
+Please implement the user authentication feature.
+Priority: high
+
+---
+From: agent-frontend
+Type: question
+Time: 2026-01-19T11:00:00Z
+---
+What endpoint should I use for login?
+```
+
+### OUTBOX.md
+
+Messages FROM this agent. Agent writes here, orchestrator reads and routes.
+
+```markdown
+# Outbox
+
+---
+To: manager
+Type: milestone
+Time: 2026-01-19T14:00:00Z
+---
+JWT middleware complete. Starting on refresh token logic.
+
+---
+To: agent-frontend
+Type: done
+Time: 2026-01-19T15:30:00Z
+---
+Login endpoint is POST /api/v1/auth/login
+Returns: { token, refreshToken, expiresIn }
 ```
 
 **Message Types:**
 - `task` - New task assignment
 - `question` - Question needing answer
 - `milestone` - Progress update
-- `blocked` - Agent is blocked
+- `blocked` - Agent is blocked, needs help
 - `done` - Work completed
 
-## Go Package
+## Agent Rules
 
-### Installation
+1. **Read your own INBOX.md** - Check for new messages
+2. **Write to your own OUTBOX.md** - Send messages out
+3. **Never write to another agent's files** - Orchestrator handles routing
+4. **Update CURRENT.md** - Keep state current as you work
+5. **Update PLAN.md** - Mark tasks as you progress
 
-```bash
-go get github.com/hotschmoe/cortical-stack/pkg/cstack
-```
+## Hooks
 
-### Usage
+### Stop Hook (Checkpoint Reminder)
 
-```go
-import "github.com/hotschmoe/cortical-stack/pkg/cstack"
+When a Claude Code session ends, remind the agent to checkpoint:
 
-// Read current state
-state, err := cstack.ParseCurrent("/path/to/workspace")
-
-// Read plan
-plan, err := cstack.ParsePlan("/path/to/workspace")
-
-// Write to inbox
-msg := cstack.Message{
-    From:    "manager",
-    Type:    "task",
-    Content: "Implement feature X",
+`.claude/settings.local.json`:
+```json
+{
+  "hooks": {
+    "stop": [
+      {
+        "command": "echo 'Remember to update .cstack/CURRENT.md with your progress!'"
+      }
+    ]
+  }
 }
-err = cstack.WriteInbox("/path/to/workspace", msg)
-
-// Read outbox
-messages, err := cstack.ReadOutbox("/path/to/workspace")
-
-// Clear outbox after processing
-err = cstack.ClearOutbox("/path/to/workspace")
-
-// Initialize stack in new directory
-err = cstack.InitStack("/path/to/workspace")
 ```
 
 ## V1 Scope
 
 ### Included
-
-- [x] Markdown file parsers (CURRENT.md, PLAN.md)
-- [x] Message read/write (INBOX.md, OUTBOX.md)
-- [x] Template files for initialization
-- [x] Go package with full test coverage
-- [x] Graceful handling of missing files
-- [x] No external dependencies
+- Markdown file format specification
+- Clean template files (`clean/.cstack/`)
+- Install scripts (PowerShell, Bash)
+- Claude Code hook examples
+- CLAUDE.md template with format instructions
 
 ### Excluded (V2+)
+- CLI tooling (`cstack` command)
+- Hash-based message IDs
+- Go parsing library (moved to V2)
+- Thread tracking
+- Task dependencies
 
-- [ ] Hash-based message IDs (deduplication)
-- [ ] Thread tracking
-- [ ] Parent/child task notation
-- [ ] Semantic compaction
-- [ ] Dependency-aware task graph
-- [ ] Beads integration
+## Message ID Convention
 
-## Versioning
+For V1, use simple timestamp-based IDs when needed:
 
-This project uses SemVer. V1.x releases will maintain backward compatibility with the file format.
+```
+msg-2026-01-19T10-30-00
+```
+
+Or short random suffixes:
+
+```
+msg-a7f3
+```
+
+Hash-based IDs for deduplication are a V2 feature.
+
+## Related Projects
+
+- [context-by-md](https://github.com/Hotschmoe/context-by-md) - Original inspiration, lightweight context management
+- [beads](https://github.com/steveyegge/beads) - Advanced git-backed issue tracker for AI agents

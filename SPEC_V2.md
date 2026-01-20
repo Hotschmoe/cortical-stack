@@ -1,208 +1,202 @@
 # Cortical Stack - V2 Specification
 
-## Overview
+CLI tooling for multi-agent coordination.
 
-V2 evolves the stack format with features borrowed from beads_rust, while maintaining markdown compatibility.
+## Philosophy
 
-## Evolution Path
+V2 adds the `cstack` CLI for scenarios where pure markdown isn't enough:
+- Multi-agent message routing
+- Hash-based message IDs for deduplication
+- Atomic file operations
+- Orchestration tooling
+
+The CLI is written in Go and distributed as pre-built binaries.
+
+## Installation
+
+### Pre-built Binaries
+
+```bash
+# macOS/Linux
+curl -fsSL https://github.com/hotschmoe/cortical-stack/releases/latest/download/cstack-$(uname -s)-$(uname -m) -o /usr/local/bin/cstack
+chmod +x /usr/local/bin/cstack
+
+# Windows (PowerShell)
+irm https://github.com/hotschmoe/cortical-stack/releases/latest/download/cstack-windows-amd64.exe -OutFile cstack.exe
+```
+
+### From Source
+
+```bash
+go install github.com/hotschmoe/cortical-stack/cmd/cstack@latest
+```
+
+## CLI Commands
+
+### Initialize Stack
+
+```bash
+cstack init [path]
+```
+
+Creates `.cstack/` directory with template files.
+
+### Send Message
+
+```bash
+cstack send --to agent-backend --type task "Implement the login endpoint"
+```
+
+Atomically appends to target agent's INBOX.md with:
+- Generated hash-based ID
+- Timestamp
+- Proper formatting
+
+### Receive Messages
+
+```bash
+cstack recv [--clear]
+```
+
+Reads INBOX.md, optionally clears after reading.
+
+### Check Status
+
+```bash
+cstack status
+```
+
+Shows:
+- Current task from CURRENT.md
+- In-progress tasks from PLAN.md
+- Unread inbox message count
+
+### Watch for Messages
+
+```bash
+cstack watch --inbox
+```
+
+Polls INBOX.md for new messages. Useful for orchestrators.
+
+## Hash-Based Message IDs
+
+V2 generates collision-resistant IDs from content hash:
 
 ```
-V1 (Current):
-  - Pure markdown files in .cstack/
-  - Simple, portable, human-readable
-  - No external dependencies
-
-V2 (This Spec):
-  - Fork beads_rust for advanced features
-  - Maintain markdown as storage format
-  - Add computed features on top
+ID = base62(sha256(From + Type + Content + truncated_timestamp)[:6])
 ```
 
-## New Features
+Example: `msg-a7f3bc`
 
-### Hash-based Message IDs
+Benefits:
+- Deduplication (same message = same ID)
+- No central ID coordinator needed
+- Merge-friendly in git
 
-Automatic deduplication via content hashing:
+## File Format Extensions
+
+### INBOX.md / OUTBOX.md
+
+V2 adds `ID` field (V1 format still supported):
 
 ```markdown
 ---
-ID: msg-a7f3bc12
-From: agent-alice
-Type: milestone
+ID: msg-a7f3bc
+From: manager
+To: agent-backend
+Type: task
 Time: 2026-01-19T10:30:00Z
 ---
+Implement the login endpoint.
 ```
 
-ID is generated from hash of (From + Type + Content + truncated timestamp).
+### Thread Support
 
-### Thread Tracking
-
-Group related messages:
+Optional thread grouping:
 
 ```markdown
 ---
-ID: msg-b8c4
-From: agent-bob
-Thread: thread-auth-impl
+ID: msg-b8c4de
+From: agent-frontend
+Thread: auth-implementation
+ReplyTo: msg-a7f3bc
 Type: question
+Time: 2026-01-19T11:00:00Z
 ---
-Should we use JWT or session auth?
+Should login return user profile data?
 ```
 
-### Parent/Child Task Notation
+## Go Library
 
-Hierarchical task dependencies:
-
-```markdown
-## Tasks
-- [ ] Implement authentication (task-001)
-  - [ ] Design auth flow (task-002, parent: task-001)
-  - [ ] Build JWT middleware (task-003, parent: task-001)
-  - [ ] Write tests (task-004, parent: task-001)
-```
-
-### Dependency-Aware Task Graph
-
-Tasks can declare dependencies:
-
-```markdown
-- [ ] Deploy to staging (depends: task-003, task-004)
-```
-
-Parser builds dependency graph, enables:
-- Topological sorting
-- Critical path analysis
-- Blocked task detection
-
-### Semantic Compaction
-
-When stack files grow large:
-1. Completed tasks archived to HISTORY.md
-2. Old messages compacted to summaries
-3. Original content preserved in git history
-
-### CONTEXT.md
-
-Long-term memory file:
-
-```markdown
-# Context
-
-## Project Overview
-This is an e-commerce platform...
-
-## Key Decisions
-- Using PostgreSQL for persistence
-- JWT for auth, refresh tokens for sessions
-
-## Learned Patterns
-- API endpoints follow /api/v1/{resource} pattern
-- Tests live in _test.go files adjacent to code
-```
-
-## Beads Integration
-
-### What We Take from Beads
-
-1. **Task graph structure** - DAG for dependencies
-2. **Compaction algorithm** - Semantic summarization
-3. **Search indexing** - Fast content lookup
-
-### What We Keep from V1
-
-1. **Markdown format** - Human readable/editable
-2. **Git native** - No separate database
-3. **Graceful degradation** - Works without beads features
-
-## Decision Trigger
-
-When to move from V1 to V2:
-- Markdown grep becomes painful at scale
-- Task dependencies become complex
-- Semantic compaction needed for large histories
-- Search across many agents required
-
-## File Format Changes
-
-### CURRENT.md (unchanged)
-
-Same format as V1.
-
-### PLAN.md (extended)
-
-```markdown
-## Tasks
-- [ ] Task description (id: task-001)
-  - [ ] Subtask (id: task-002, parent: task-001)
-- [ ] Another task (id: task-003, depends: task-001)
-
-## Graph
-task-001 -> task-002
-task-001 -> task-003
-```
-
-### INBOX.md / OUTBOX.md (extended)
-
-```markdown
----
-ID: msg-a7f3bc12
-From: agent-alice
-To: manager
-Thread: thread-feature-x
-ReplyTo: msg-previous
-Type: milestone
-Time: 2026-01-19T10:30:00Z
----
-Message content here.
-```
-
-### HISTORY.md (new)
-
-```markdown
-# History
-
-## Compacted: 2026-01-15
-
-### Summary
-Completed initial setup phase: project structure, CI pipeline, basic auth.
-
-### Archived Tasks
-- [x] Set up project structure
-- [x] Configure CI pipeline
-- [x] Implement basic auth
-```
-
-## Go Package Extensions
+The V1 Go code becomes the foundation for the CLI:
 
 ```go
+import "github.com/hotschmoe/cortical-stack/pkg/cstack"
+
 // V2 additions
-type TaskGraph struct {
-    Tasks map[string]*Task
-    Edges map[string][]string
+msg := cstack.Message{
+    From:    "manager",
+    To:      "agent-backend",
+    Type:    "task",
+    Content: "Implement login",
 }
 
-func ParseTaskGraph(workspacePath string) (*TaskGraph, error)
-func (g *TaskGraph) TopologicalSort() ([]*Task, error)
-func (g *TaskGraph) FindBlocked() []*Task
+// Generates hash-based ID automatically
+id, err := cstack.SendMessage("/path/to/agent", msg)
 
-func CompactHistory(workspacePath string, olderThan time.Time) error
-func SearchStack(workspacePath string, query string) ([]SearchResult, error)
+// Atomic write with file locking
+err = cstack.WriteInboxAtomic("/path/to/agent", msg)
 ```
 
-## Migration Path
+## Multi-Agent Orchestration
 
-V1 stacks work in V2 without changes. New features are additive:
+```
+                    Orchestrator
+                         |
+          +--------------+--------------+
+          |              |              |
+     agent-api     agent-frontend   agent-db
+          |              |              |
+      .cstack/       .cstack/       .cstack/
+```
+
+Orchestrator workflow:
+1. Read each agent's OUTBOX.md
+2. Route messages to appropriate INBOX.md
+3. Clear processed OUTBOX.md entries
+4. Monitor for blocked agents
+
+## V2 Scope
+
+### Included
+- `cstack` CLI binary
+- Hash-based message IDs
+- Atomic file operations
+- Thread support
+- Go library with full API
+- Pre-built binaries for major platforms
+
+### Excluded (V3+)
+- Task dependency graph
+- Semantic compaction
+- Memory decay
+- Search indexing
+
+## Migration from V1
+
+V2 is fully backward compatible with V1:
+- V1 files work without changes
 - Missing IDs auto-generated on read
-- Missing thread fields ignored
-- Task graph built from flat list if no dependencies
+- CLI commands work on V1 stacks
 
-## Potential Beads Fork
+## Release Strategy
 
-If we fork beads_rust:
+- Binaries built via GitHub Actions on tag
+- Platforms: linux-amd64, linux-arm64, darwin-amd64, darwin-arm64, windows-amd64
+- Checksums published with each release
 
-```
-github.com/hotschmoe/cortical-stack
-  pkg/stack/         # V1 markdown parser (stable)
-  pkg/beads/         # V2 beads-style features (fork)
-  pkg/compat/        # Bridging between formats
-```
+## Related Projects
+
+- [context-by-md](https://github.com/Hotschmoe/context-by-md) - V1 inspiration
+- [beads](https://github.com/steveyegge/beads) - V3 inspiration for advanced features
