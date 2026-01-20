@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Cortical Stack Installer (Bash)
-# Usage: curl -fsSL https://raw.githubusercontent.com/hotschmoe/cortical-stack/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/hotschmoe/cortical-stack/master/install.sh | bash
 
 set -e
 
 STACK_DIR=".cstack"
 CLAUDE_DIR=".claude"
-REPO_BASE="https://raw.githubusercontent.com/hotschmoe/cortical-stack/main/clean"
+REPO_BASE="https://raw.githubusercontent.com/hotschmoe/cortical-stack/master/clean"
 
 # Colors
 CYAN='\033[0;36m'
@@ -56,9 +56,10 @@ if [ ! -d "$STACK_DIR" ]; then
 fi
 
 mkdir -p "$CLAUDE_DIR/hooks"
+mkdir -p "$CLAUDE_DIR/commands"
 
 # Download or create stack files (only if they don't exist)
-for file in CURRENT.md PLAN.md INBOX.md OUTBOX.md; do
+for file in CURRENT.md PLAN.md INBOX.md OUTBOX.md QUICKREF.md; do
     dest="$STACK_DIR/$file"
     if [ ! -f "$dest" ]; then
         status "Creating $STACK_DIR/$file..."
@@ -128,6 +129,19 @@ for hook in cstack-start.ps1 cstack-start.sh cstack-stop.ps1 cstack-stop.sh; do
 done
 
 success "Hooks installed."
+
+# Download commands (always update on install/upgrade)
+status "Installing commands..."
+
+for cmd in cstack-task.md cstack-checkpoint.md cstack-start.md; do
+    if curl -fsSL "$REPO_BASE/.claude/commands/$cmd" -o "$CLAUDE_DIR/commands/$cmd" 2>/dev/null; then
+        :
+    else
+        warn "Failed to download $cmd"
+    fi
+done
+
+success "Commands installed."
 
 # Handle settings.local.json
 SETTINGS_FILE="$CLAUDE_DIR/settings.local.json"
@@ -223,6 +237,8 @@ echo "  $STACK_DIR/CURRENT.md   - Active task, focus, next steps"
 echo "  $STACK_DIR/PLAN.md      - Task backlog with states"
 echo "  $STACK_DIR/INBOX.md     - Messages TO this agent"
 echo "  $STACK_DIR/OUTBOX.md    - Messages FROM this agent"
+echo "  $STACK_DIR/QUICKREF.md  - Command quick reference"
+echo "  $CLAUDE_DIR/commands/   - Slash commands"
 echo "  $CLAUDE_DIR/hooks/      - Start/stop hooks"
 echo ""
 echo -e "${WHITE}Next steps:${NC}"

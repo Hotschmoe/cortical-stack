@@ -18,12 +18,12 @@ Inspired by:
 
 **Windows (PowerShell):**
 ```powershell
-irm https://raw.githubusercontent.com/hotschmoe/cortical-stack/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/hotschmoe/cortical-stack/master/install.ps1 | iex
 ```
 
 **macOS/Linux (Bash):**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hotschmoe/cortical-stack/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/hotschmoe/cortical-stack/master/install.sh | bash
 ```
 
 ### What Gets Installed
@@ -35,7 +35,12 @@ your-project/
     PLAN.md           # Task backlog with states
     INBOX.md          # Messages TO this agent
     OUTBOX.md         # Messages FROM this agent
+    QUICKREF.md       # Command quick reference
   .claude/
+    commands/
+      cstack-task.md       # Task management command
+      cstack-checkpoint.md # Save state command
+      cstack-start.md      # Load context command
     hooks/
       cstack-start.*  # Loads stack on session start
       cstack-stop.*   # Reminds to save on session end
@@ -53,12 +58,12 @@ your-project/
 
 **Windows (PowerShell):**
 ```powershell
-Remove-Item -Recurse -Force .cstack, .claude\hooks\cstack-*.ps1, .claude\hooks\cstack-*.sh
+Remove-Item -Recurse -Force .cstack, .claude\commands\cstack-*.md, .claude\hooks\cstack-*.ps1, .claude\hooks\cstack-*.sh
 ```
 
 **macOS/Linux:**
 ```bash
-rm -rf .cstack .claude/hooks/cstack-*.sh .claude/hooks/cstack-*.ps1
+rm -rf .cstack .claude/commands/cstack-*.md .claude/hooks/cstack-*.sh .claude/hooks/cstack-*.ps1
 ```
 
 Note: This preserves other `.claude/` settings. Also remove the cortical stack section from CLAUDE.md if present.
@@ -70,6 +75,20 @@ Note: This preserves other `.claude/` settings. Also remove the cortical stack s
 - **Git native** - Version controlled, diffable
 - **Portable** - Copy a directory, copy the state
 - **Survives anything** - No database to corrupt
+
+## Commands
+
+| Command | What it does |
+|---------|--------------|
+| `/cstack-task` | List tasks with numbers |
+| `/cstack-task start 1` | Start task #1 (quick) |
+| `/cstack-task start 1 --plan` | Start task #1 with planning interview |
+| `/cstack-task add P1: X` | Add new task |
+| `/cstack-task done` | Complete active task |
+| `/cstack-task block 1 \| reason` | Block task #1 |
+| `/cstack-task ready 1` | Unblock task #1 |
+| `/cstack-checkpoint` | Save all state |
+| `/cstack-start` | Read context and show status |
 
 ## File Formats
 
@@ -129,6 +148,18 @@ The installer sets up Claude Code hooks:
 - **Stop hook** - Reminds agent to save state before session ends
 
 ## Workflow
+
+```
+/cstack-start                 # Load context, see task list
+    |
+/cstack-task start 1          # Start task (or --plan for interview)
+    |
+[work on task]                # Check off subtasks in CURRENT.md
+    |
+/cstack-task done             # Complete, clear active task
+    |
+/cstack-checkpoint            # Save state
+```
 
 ### On Session Start
 1. Start hook automatically loads CURRENT.md, PLAN.md

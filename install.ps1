@@ -1,11 +1,11 @@
 # Cortical Stack Installer (PowerShell)
-# Usage: irm https://raw.githubusercontent.com/hotschmoe/cortical-stack/main/install.ps1 | iex
+# Usage: irm https://raw.githubusercontent.com/hotschmoe/cortical-stack/master/install.ps1 | iex
 
 $ErrorActionPreference = "Stop"
 
 $StackDir = ".cstack"
 $ClaudeDir = ".claude"
-$RepoBase = "https://raw.githubusercontent.com/hotschmoe/cortical-stack/main/clean"
+$RepoBase = "https://raw.githubusercontent.com/hotschmoe/cortical-stack/master/clean"
 
 function Write-Status($msg) {
     Write-Host "[cstack] " -ForegroundColor Cyan -NoNewline
@@ -57,9 +57,10 @@ if (-not (Test-Path $StackDir)) {
 }
 
 New-Item -ItemType Directory -Path "$ClaudeDir\hooks" -Force | Out-Null
+New-Item -ItemType Directory -Path "$ClaudeDir\commands" -Force | Out-Null
 
 # Download or create stack files (only if they don't exist)
-$stackFiles = @("CURRENT.md", "PLAN.md", "INBOX.md", "OUTBOX.md")
+$stackFiles = @("CURRENT.md", "PLAN.md", "INBOX.md", "OUTBOX.md", "QUICKREF.md")
 
 foreach ($file in $stackFiles) {
     $dest = Join-Path $StackDir $file
@@ -140,6 +141,26 @@ foreach ($hook in $hooks) {
 }
 
 Write-Success "Hooks installed."
+
+# Download commands (always update on install/upgrade)
+Write-Status "Installing commands..."
+
+$commands = @(
+    @{ name = "cstack-task.md"; url = "$RepoBase/.claude/commands/cstack-task.md" },
+    @{ name = "cstack-checkpoint.md"; url = "$RepoBase/.claude/commands/cstack-checkpoint.md" },
+    @{ name = "cstack-start.md"; url = "$RepoBase/.claude/commands/cstack-start.md" }
+)
+
+foreach ($cmd in $commands) {
+    $dest = Join-Path "$ClaudeDir\commands" $cmd.name
+    try {
+        Invoke-RestMethod -Uri $cmd.url -OutFile $dest
+    } catch {
+        Write-Warn "Failed to download $($cmd.name)"
+    }
+}
+
+Write-Success "Commands installed."
 
 # Handle settings.local.json
 $settingsFile = "$ClaudeDir\settings.local.json"
@@ -238,6 +259,8 @@ Write-Host "  $StackDir/CURRENT.md   - Active task, focus, next steps"
 Write-Host "  $StackDir/PLAN.md      - Task backlog with states"
 Write-Host "  $StackDir/INBOX.md     - Messages TO this agent"
 Write-Host "  $StackDir/OUTBOX.md    - Messages FROM this agent"
+Write-Host "  $StackDir/QUICKREF.md  - Command quick reference"
+Write-Host "  $ClaudeDir/commands/   - Slash commands"
 Write-Host "  $ClaudeDir/hooks/      - Start/stop hooks"
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor White
