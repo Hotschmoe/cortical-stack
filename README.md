@@ -33,8 +33,6 @@ your-project/
   .cstack/
     CURRENT.md        # Active task, focus, next steps
     PLAN.md           # Task backlog with states
-    INBOX.md          # Messages TO this agent
-    OUTBOX.md         # Messages FROM this agent
     QUICKREF.md       # Command quick reference
   .claude/
     commands/
@@ -126,20 +124,6 @@ Project context here.
 | `- [x]` | Completed |
 | `- [!]` | Blocked |
 
-### INBOX.md / OUTBOX.md - Messages
-
-```markdown
----
-From: manager
-To: agent-backend
-Type: task
-Time: 2026-01-19T10:30:00Z
----
-Please implement feature X.
-```
-
-**Message Types:** `task`, `question`, `milestone`, `blocked`, `done`
-
 ## Hooks
 
 The installer sets up Claude Code hooks:
@@ -163,13 +147,11 @@ The installer sets up Claude Code hooks:
 
 ### On Session Start
 1. Start hook automatically loads CURRENT.md, PLAN.md
-2. Agent checks INBOX.md for messages
-3. Resume work from saved state
+2. Resume work from saved state
 
 ### During Work
 - Update CURRENT.md as you progress
 - Mark tasks in PLAN.md as status changes
-- Write questions/updates to OUTBOX.md
 
 ### On Session End
 1. Stop hook reminds agent to checkpoint

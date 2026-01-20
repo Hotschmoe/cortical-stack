@@ -59,7 +59,7 @@ mkdir -p "$CLAUDE_DIR/hooks"
 mkdir -p "$CLAUDE_DIR/commands"
 
 # Download or create stack files (only if they don't exist)
-for file in CURRENT.md PLAN.md INBOX.md OUTBOX.md QUICKREF.md; do
+for file in CURRENT.md PLAN.md QUICKREF.md; do
     dest="$STACK_DIR/$file"
     if [ ! -f "$dest" ]; then
         status "Creating $STACK_DIR/$file..."
@@ -80,7 +80,6 @@ for file in CURRENT.md PLAN.md INBOX.md OUTBOX.md QUICKREF.md; do
 
 ## Next Steps
 - Review PLAN.md for pending tasks
-- Check INBOX.md for new messages
 EOF
                     ;;
                 PLAN.md)
@@ -92,20 +91,6 @@ EOF
 
 ## Notes
 (Project notes and context)
-EOF
-                    ;;
-                INBOX.md)
-                    cat > "$dest" << 'EOF'
-# Inbox
-
-(Messages to this agent will appear here)
-EOF
-                    ;;
-                OUTBOX.md)
-                    cat > "$dest" << 'EOF'
-# Outbox
-
-(Messages from this agent will appear here)
 EOF
                     ;;
             esac
@@ -235,8 +220,6 @@ echo ""
 echo -e "${WHITE}Files:${NC}"
 echo "  $STACK_DIR/CURRENT.md   - Active task, focus, next steps"
 echo "  $STACK_DIR/PLAN.md      - Task backlog with states"
-echo "  $STACK_DIR/INBOX.md     - Messages TO this agent"
-echo "  $STACK_DIR/OUTBOX.md    - Messages FROM this agent"
 echo "  $STACK_DIR/QUICKREF.md  - Command quick reference"
 echo "  $CLAUDE_DIR/commands/   - Slash commands"
 echo "  $CLAUDE_DIR/hooks/      - Start/stop hooks"

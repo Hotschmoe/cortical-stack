@@ -50,19 +50,6 @@ Save current state for session continuity and compaction recovery.
 - Update task status: `- [ ]` -> `- [>]`
 - Add any discovered bugs/debt/ideas to Backlog section
 
-### 3. Write OUTBOX.md (if needed)
-
-If there are updates to report to a manager/orchestrator:
-```markdown
----
-To: manager
-Type: milestone|blocked|question
-Time: [timestamp]
-Status: unread
----
-[Message content]
-```
-
 ## On Compaction / Context Loss
 
 If you notice you've lost context:

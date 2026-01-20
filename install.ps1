@@ -60,7 +60,7 @@ New-Item -ItemType Directory -Path "$ClaudeDir\hooks" -Force | Out-Null
 New-Item -ItemType Directory -Path "$ClaudeDir\commands" -Force | Out-Null
 
 # Download or create stack files (only if they don't exist)
-$stackFiles = @("CURRENT.md", "PLAN.md", "INBOX.md", "OUTBOX.md", "QUICKREF.md")
+$stackFiles = @("CURRENT.md", "PLAN.md", "QUICKREF.md")
 
 foreach ($file in $stackFiles) {
     $dest = Join-Path $StackDir $file
@@ -84,7 +84,6 @@ foreach ($file in $stackFiles) {
 
 ## Next Steps
 - Review PLAN.md for pending tasks
-- Check INBOX.md for new messages
 "@ | Set-Content $dest
                 }
                 "PLAN.md" {
@@ -96,20 +95,6 @@ foreach ($file in $stackFiles) {
 
 ## Notes
 (Project notes and context)
-"@ | Set-Content $dest
-                }
-                "INBOX.md" {
-                    @"
-# Inbox
-
-(Messages to this agent will appear here)
-"@ | Set-Content $dest
-                }
-                "OUTBOX.md" {
-                    @"
-# Outbox
-
-(Messages from this agent will appear here)
 "@ | Set-Content $dest
                 }
             }
@@ -257,8 +242,6 @@ Write-Host ""
 Write-Host "Files:" -ForegroundColor White
 Write-Host "  $StackDir/CURRENT.md   - Active task, focus, next steps"
 Write-Host "  $StackDir/PLAN.md      - Task backlog with states"
-Write-Host "  $StackDir/INBOX.md     - Messages TO this agent"
-Write-Host "  $StackDir/OUTBOX.md    - Messages FROM this agent"
 Write-Host "  $StackDir/QUICKREF.md  - Command quick reference"
 Write-Host "  $ClaudeDir/commands/   - Slash commands"
 Write-Host "  $ClaudeDir/hooks/      - Start/stop hooks"

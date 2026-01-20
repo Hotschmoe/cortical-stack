@@ -26,8 +26,6 @@ This project uses cortical stack for agent memory persistence.
 |------|---------|
 | `.cstack/CURRENT.md` | Session state + active task detail |
 | `.cstack/PLAN.md` | Task list + backlog |
-| `.cstack/INBOX.md` | Messages TO this agent |
-| `.cstack/OUTBOX.md` | Messages FROM this agent |
 | `.cstack/QUICKREF.md` | Command quick reference |
 
 ## Task Format (V1.5)
@@ -79,23 +77,6 @@ Custom: Any `#word` is valid.
 /cstack-stale                 # Find stale tasks (7 days)
 /cstack-stale 14              # Tasks older than 14 days
 ```
-
-## Message Format (INBOX/OUTBOX)
-
-```markdown
----
-From: sender-id
-To: recipient-id
-Type: task|question|milestone|blocked|done
-Time: 2026-01-19T10:30:00Z
-Status: unread
----
-Message content here.
-```
-
-**Status field:**
-- `unread` - New message, not yet seen
-- `read` - Message has been displayed to agent
 
 ## On Context Loss / Compaction
 

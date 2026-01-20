@@ -44,8 +44,6 @@ Custom: Any `#word` is valid.
 |------|---------|
 | `CURRENT.md` | Session state + active task detail |
 | `PLAN.md` | Task list + backlog |
-| `INBOX.md` | Messages TO this agent |
-| `OUTBOX.md` | Messages FROM this agent |
 
 ## Workflow
 

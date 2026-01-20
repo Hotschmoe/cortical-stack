@@ -109,7 +109,7 @@ go vet ./...
 ```
 cortical-stack/
   pkg/cstack/           # Core library
-    cstack.go           # Main API (ParseCurrent, ParsePlan, WriteInbox, etc.)
+    cstack.go           # Main API (ParseCurrent, ParsePlan, InitStack)
     cstack_test.go      # Tests
     doc.go              # Package documentation
   templates/            # Example stack files
@@ -121,7 +121,6 @@ cortical-stack/
 - **CurrentState**: Active task, focus, next steps (from CURRENT.md)
 - **PlanState**: Task backlog with statuses (from PLAN.md)
 - **Task**: Description + status (pending, in_progress, completed, blocked)
-- **Message**: ID, From, To, Thread, Type, Content, Timestamp (for INBOX/OUTBOX)
 
 ### Stack File Format
 
@@ -132,8 +131,7 @@ repo/
   .cstack/
     CURRENT.md    # Active task, focus, next steps
     PLAN.md       # Task backlog with states
-    INBOX.md      # Messages TO this agent
-    OUTBOX.md     # Messages FROM this agent
+    QUICKREF.md   # Command quick reference
 ```
 
 ### Task States (PLAN.md)
@@ -144,19 +142,6 @@ repo/
 | `- [>]` | In Progress |
 | `- [x]` | Completed |
 | `- [!]` | Blocked |
-
-### Message Format (INBOX/OUTBOX)
-
-```markdown
----
-ID: msg-a7f3
-From: agent-id
-To: manager
-Type: task|question|milestone|blocked|done
-Time: 2026-01-19T10:30:00Z
----
-Message content here.
-```
 
 ## Key Design Decisions
 

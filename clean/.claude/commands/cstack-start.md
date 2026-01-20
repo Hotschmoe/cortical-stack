@@ -6,7 +6,6 @@ Read context and show task list.
 
 1. **Read CURRENT.md** - Check active task, next steps
 2. **Read PLAN.md** - Get task list
-3. **Check INBOX.md** - Look for new messages
 
 ## Output
 
@@ -19,9 +18,6 @@ Tasks:
 1. [P1] Task name | context
 2. [P2] Another task | context
 ...
-
-Inbox: [N] new messages
-   or: No new messages
 
 What would you like to work on?
 ```
