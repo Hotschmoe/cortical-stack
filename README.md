@@ -16,34 +16,52 @@ Inspired by:
 
 ### One-Line Install
 
-**PowerShell (Windows):**
+**Windows (PowerShell):**
 ```powershell
 irm https://raw.githubusercontent.com/hotschmoe/cortical-stack/main/install.ps1 | iex
 ```
 
-**Bash (macOS/Linux):**
+**macOS/Linux (Bash):**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/hotschmoe/cortical-stack/main/install.sh | bash
 ```
 
+### What Gets Installed
+
+```
+your-project/
+  .cstack/
+    CURRENT.md        # Active task, focus, next steps
+    PLAN.md           # Task backlog with states
+    INBOX.md          # Messages TO this agent
+    OUTBOX.md         # Messages FROM this agent
+  .claude/
+    hooks/
+      cstack-start.*  # Loads stack on session start
+      cstack-stop.*   # Reminds to save on session end
+    settings.local.json
+  CLAUDE.md           # Instructions for the agent
+```
+
 ### Manual Install
 
-Copy `clean/.cstack/` to your project root:
+1. Copy `clean/.cstack/` to your project root
+2. Copy `clean/.claude/` to your project root
+3. Copy `clean/CLAUDE.md` to your project (or append to existing)
 
+## Uninstall
+
+**Windows (PowerShell):**
+```powershell
+Remove-Item -Recurse -Force .cstack, .claude\hooks\cstack-*.ps1, .claude\hooks\cstack-*.sh
+```
+
+**macOS/Linux:**
 ```bash
-cp -r clean/.cstack /path/to/your/project/
+rm -rf .cstack .claude/hooks/cstack-*.sh .claude/hooks/cstack-*.ps1
 ```
 
-## File Structure
-
-```
-repo/
-  .cstack/
-    CURRENT.md    # Active task, focus, next steps
-    PLAN.md       # Task backlog with states
-    INBOX.md      # Messages TO this agent
-    OUTBOX.md     # Messages FROM this agent
-```
+Note: This preserves other `.claude/` settings. Also remove the cortical stack section from CLAUDE.md if present.
 
 ## Why Markdown?
 
@@ -55,7 +73,8 @@ repo/
 
 ## File Formats
 
-**CURRENT.md** - Active task state
+### CURRENT.md - Active State
+
 ```markdown
 ## Current Task
 Implement user authentication
@@ -68,24 +87,63 @@ Building JWT middleware
 - Add integration tests
 ```
 
-**PLAN.md** - Task backlog
+### PLAN.md - Task Backlog
+
 ```markdown
 ## Tasks
 - [ ] Pending task
 - [>] In progress task
 - [x] Completed task
 - [!] Blocked task
+
+## Notes
+Project context here.
 ```
 
-**INBOX.md / OUTBOX.md** - Messages
+| Syntax | Status |
+|--------|--------|
+| `- [ ]` | Pending |
+| `- [>]` | In Progress |
+| `- [x]` | Completed |
+| `- [!]` | Blocked |
+
+### INBOX.md / OUTBOX.md - Messages
+
 ```markdown
 ---
 From: manager
+To: agent-backend
 Type: task
 Time: 2026-01-19T10:30:00Z
 ---
 Please implement feature X.
 ```
+
+**Message Types:** `task`, `question`, `milestone`, `blocked`, `done`
+
+## Hooks
+
+The installer sets up Claude Code hooks:
+
+- **Start hook** - Loads `.cstack/` contents into context on session start
+- **Stop hook** - Reminds agent to save state before session ends
+
+## Workflow
+
+### On Session Start
+1. Start hook automatically loads CURRENT.md, PLAN.md
+2. Agent checks INBOX.md for messages
+3. Resume work from saved state
+
+### During Work
+- Update CURRENT.md as you progress
+- Mark tasks in PLAN.md as status changes
+- Write questions/updates to OUTBOX.md
+
+### On Session End
+1. Stop hook reminds agent to checkpoint
+2. Agent updates CURRENT.md with progress
+3. Agent updates PLAN.md with task status
 
 ## Versioning Roadmap
 
