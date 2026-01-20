@@ -3,16 +3,33 @@
 
 This project uses cortical stack for agent memory persistence.
 
+## Commands
+
+| Command | What it does |
+|---------|--------------|
+| `/cstack-task` | List tasks with numbers |
+| `/cstack-task start 1` | Start task #1 (quick) |
+| `/cstack-task start 1 --plan` | Start task #1 with interview |
+| `/cstack-task add P1: X` | Add new task |
+| `/cstack-task done` | Complete active task |
+| `/cstack-checkpoint` | Save all state |
+| `/cstack-start` | Read context and show status |
+
 ## Stack Files
 
 | File | Purpose |
 |------|---------|
-| `.cstack/CURRENT.md` | Active task, focus, next steps |
-| `.cstack/PLAN.md` | Task backlog with status |
+| `.cstack/CURRENT.md` | Session state + active task detail |
+| `.cstack/PLAN.md` | Task list + backlog |
 | `.cstack/INBOX.md` | Messages TO this agent |
 | `.cstack/OUTBOX.md` | Messages FROM this agent |
+| `.cstack/QUICKREF.md` | Command quick reference |
 
-## Task Status (PLAN.md)
+## Task Format (PLAN.md)
+
+```
+- [status] P#: Title | context | next: action
+```
 
 | Syntax | Status |
 |--------|--------|
@@ -21,22 +38,21 @@ This project uses cortical stack for agent memory persistence.
 | `- [x]` | Completed |
 | `- [!]` | Blocked |
 
+**Priority:** P0=Critical P1=High P2=Medium P3=Low
+
 ## Workflow
 
-### On Session Start
-1. Read `.cstack/CURRENT.md` for active state
-2. Check `.cstack/INBOX.md` for new messages (unread messages shown automatically)
-3. Review `.cstack/PLAN.md` for task context
-
-### During Work
-- Update `CURRENT.md` as you progress
-- Mark tasks in `PLAN.md` as status changes
-- Write questions/updates to `OUTBOX.md`
-
-### On Session End
-1. Update `CURRENT.md` with current progress
-2. Update `PLAN.md` with task status
-3. Write any outgoing messages to `OUTBOX.md`
+```
+/cstack-task                  # See numbered task list
+    |
+/cstack-task start 1          # Start task (or --plan for interview)
+    |
+[work on task]                # Check off subtasks in CURRENT.md
+    |
+/cstack-task done             # Complete, clear active task
+    |
+/cstack-checkpoint            # Save state
+```
 
 ## Message Format (INBOX/OUTBOX)
 
@@ -55,25 +71,13 @@ Message content here.
 - `unread` - New message, not yet seen
 - `read` - Message has been displayed to agent
 
-The start hook automatically marks inbox messages as `read` after displaying them.
-
-**When writing to OUTBOX**, always use `Status: unread` so the recipient knows it's new:
-
-```markdown
----
-To: manager
-Type: milestone
-Time: 2026-01-19T14:00:00Z
-Status: unread
----
-Completed authentication module.
-```
-
 ## On Context Loss / Compaction
 
 If you notice context was lost:
 1. Read `.cstack/CURRENT.md` immediately
-2. Check "Current Task" and "Next Steps" sections
-3. Resume from where the state indicates
+2. Check "Active Task" for goal and subtasks
+3. Resume from "Next Steps" or `<-- you are here` marker
 4. Read `.cstack/PLAN.md` for broader context
+
+**Signs:** You don't remember what you were working on, user references something unfamiliar, or unsure of task state.
 <!-- cstack:end -->
