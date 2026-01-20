@@ -167,6 +167,58 @@ Orchestrator workflow:
 3. Clear processed OUTBOX.md entries
 4. Monitor for blocked agents
 
+## AGENTS.md Support
+
+V2 introduces `AGENTS.md` for defining multi-agent systems:
+
+```markdown
+# Agents
+
+## agent-backend
+- Role: API and backend development
+- Stack: ./backend/.cstack/
+- Skills: /deploy, /test, /migrate
+
+## agent-frontend
+- Role: UI and client development
+- Stack: ./frontend/.cstack/
+- Skills: /build, /lint, /preview
+
+## agent-devops
+- Role: Infrastructure and deployment
+- Stack: ./infra/.cstack/
+- Skills: /provision, /monitor
+```
+
+### Agent Definition Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| Role | Yes | What this agent is responsible for |
+| Stack | Yes | Path to agent's `.cstack/` directory |
+| Skills | No | Slash commands this agent can execute |
+| Hooks | No | Custom hooks for this agent |
+
+### CLI Commands for Agents
+
+```bash
+cstack agents list              # List all defined agents
+cstack agents status            # Show status of all agents
+cstack agents send backend task "Deploy v1.2"  # Send to specific agent
+```
+
+### Agent-Specific Hooks
+
+Each agent can have custom hooks in their stack:
+
+```
+./backend/.cstack/
+  .claude/
+    hooks/
+      deploy.ps1      # Triggered by /deploy skill
+      deploy.sh
+```
+
 ## V2 Scope
 
 ### Included
@@ -174,6 +226,8 @@ Orchestrator workflow:
 - Hash-based message IDs
 - Atomic file operations
 - Thread support
+- AGENTS.md multi-agent definitions
+- Agent-specific skills and hooks
 - Go library with full API
 - Pre-built binaries for major platforms
 

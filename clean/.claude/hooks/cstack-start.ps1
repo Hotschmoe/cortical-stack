@@ -18,11 +18,45 @@ if (Test-Path ".cstack\PLAN.md") {
     Write-Output ""
 }
 
+# Check for unread inbox messages
 if (Test-Path ".cstack\INBOX.md") {
-    $inbox = Get-Content ".cstack\INBOX.md" -Raw
-    if ($inbox -match "---") {
-        Write-Output "--- INBOX.md (has messages) ---"
-        Write-Output "You have unread messages. Check .cstack/INBOX.md"
+    $inboxContent = Get-Content ".cstack\INBOX.md" -Raw
+
+    # Check for messages (indicated by --- delimiter) that are unread
+    # Messages are unread if they have "Status: unread" or no Status field
+    if ($inboxContent -match "(?s)---\s*\n((?:(?!Status:\s*read).)*?)---") {
+        Write-Output "--- INBOX.md (UNREAD MESSAGES) ---"
+        Write-Output ""
+
+        # Show full inbox for context
+        Write-Output $inboxContent
+        Write-Output ""
+
+        # Mark all messages as read by adding/updating Status field
+        # This regex finds message headers and ensures they have Status: read
+        $updatedContent = $inboxContent
+
+        # Pattern: find headers without Status field and add it
+        # Match: ---\n<headers without Status>\n---
+        $updatedContent = [regex]::Replace(
+            $updatedContent,
+            '(?m)(---\s*\n)((?:(?!Status:)[^\n]+\n)*?)(---)',
+            {
+                param($m)
+                $header = $m.Groups[1].Value
+                $fields = $m.Groups[2].Value
+                $closer = $m.Groups[3].Value
+                "${header}${fields}Status: read`n${closer}"
+            }
+        )
+
+        # Pattern: find Status: unread and change to Status: read
+        $updatedContent = $updatedContent -replace 'Status:\s*unread', 'Status: read'
+
+        # Write back
+        $updatedContent | Set-Content ".cstack\INBOX.md" -NoNewline
+
+        Write-Output "[Messages marked as read]"
         Write-Output ""
     }
 }
