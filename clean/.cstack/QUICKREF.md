@@ -17,6 +17,8 @@
 | `/cstack-search QUERY` | Search across stack files |
 | `/cstack-stale [days]` | Find tasks with no recent activity |
 | `/cstack-checkpoint` | Save all state |
+| `/cstack-remember "fact"` | Add entry to MEMORY.md |
+| `/cstack-start` | Read context and show status |
 
 ## Task Format (V1.5)
 
@@ -44,6 +46,7 @@ Custom: Any `#word` is valid.
 |------|---------|
 | `CURRENT.md` | Session state + active task detail |
 | `PLAN.md` | Task list + backlog |
+| `MEMORY.md` | Long-term knowledge (decisions, gotchas, facts) |
 
 ## Workflow
 
@@ -78,6 +81,6 @@ Custom: Any `#word` is valid.
 
 ## On Compaction
 
-1. Run `/cstack-checkpoint`
-2. Read CURRENT.md
+1. Run `/cstack-start` to restore context
+2. Check "Active Task" for current work
 3. Continue from Next Steps / current subtask

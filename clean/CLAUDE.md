@@ -19,6 +19,7 @@ This project uses cortical stack for agent memory persistence.
 | `/cstack-stale [days]` | Find stale tasks (default: 7 days) |
 | `/cstack-checkpoint` | Save all state |
 | `/cstack-start` | Read context and show status |
+| `/cstack-remember "fact"` | Add entry to MEMORY.md |
 
 ## Stack Files
 
@@ -26,6 +27,7 @@ This project uses cortical stack for agent memory persistence.
 |------|---------|
 | `.cstack/CURRENT.md` | Session state + active task detail |
 | `.cstack/PLAN.md` | Task list + backlog |
+| `.cstack/MEMORY.md` | Long-term knowledge (decisions, gotchas, facts) |
 | `.cstack/QUICKREF.md` | Command quick reference |
 
 ## Task Format (V1.5)
@@ -87,4 +89,18 @@ If you notice context was lost:
 4. Read `.cstack/PLAN.md` for broader context
 
 **Signs:** You don't remember what you were working on, user references something unfamiliar, or unsure of task state.
+
+## Memory
+
+When you learn something important about this project, write it to `.cstack/MEMORY.md`:
+
+- **Decisions**: Architectural choices with rationale (add to table)
+- **Gotchas**: Non-obvious behaviors, bugs, edge cases that bit you
+- **Preferences**: User preferences not documented elsewhere
+- **Facts**: Project knowledge that took effort to discover
+
+Use `/cstack-remember "fact"` or edit MEMORY.md directly. Good candidates:
+- "ParseCurrent returns empty state for missing files, not an error"
+- "User prefers table-driven tests"
+- "Windows paths need filepath.Join"
 <!-- cstack:end -->
